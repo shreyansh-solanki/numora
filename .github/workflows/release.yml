@@ -116,7 +116,7 @@ jobs:
           git push origin "v${{ steps.calc-version.outputs.new-version }}"
 
       - name: Publish to Maven Central Portal
-        run: mvn deploy -P release -DskipTests
+        run: mvn deploy -P release -DskipTests -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: Generate changelog
         id: changelog
