@@ -176,7 +176,7 @@
                         <version>${maven.central.publishing.plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <publishingServerId>sonatype-central</publishingServerId>
+                            <publishingServerId>central</publishingServerId>
                             <autoPublish>true</autoPublish>
                             <waitUntil>published</waitUntil>
                         </configuration>
