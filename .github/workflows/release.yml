@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -48,7 +48,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: Cache Maven dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -102,9 +102,6 @@ jobs:
       - name: Run tests
         run: mvn clean test verify
 
-      - name: Build and package
-        run: mvn clean package -DskipTests
-
       - name: Commit version update
         run: |
           git config --local user.email "action@github.com"
@@ -118,11 +115,8 @@ jobs:
           git push origin HEAD:master
           git push origin "v${{ steps.calc-version.outputs.new-version }}"
 
-      - name: Publish to Maven Central
-        run: >
-          mvn --batch-mode deploy -DskipTests
-          -DaltDeploymentRepository=central::default::https://central.sonatype.com/api/v1/publisher/deployments/upload
-          -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: Publish to Maven Central Portal
+        run: mvn deploy -P release -DskipTests
 
       - name: Generate changelog
         id: changelog
@@ -178,7 +172,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: numora-${{ steps.calc-version.outputs.new-version }}
           path: |
