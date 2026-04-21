@@ -92,11 +92,23 @@ jobs:
         with:
           java-version: "25"
           distribution: "temurin"
-          server-id: sonatype-central
+          server-id: central
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Setup Maven settings.xml
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          servers: |
+            [
+              {
+                "id": "central",
+                "username": "${{ secrets.MAVEN_CENTRAL_USERNAME }}",
+                "password": "${{ secrets.MAVEN_CENTRAL_PASSWORD }}"
+              }
+            ]    
 
       - name: Cache Maven dependencies
         uses: actions/cache@v5
