@@ -1,0 +1,162 @@
+name: Build, Test and Publish Numora Jar
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+env:
+  APP_VERSION: 0.0
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            # For master branch, use commit count as patch version
+            COMMIT_COUNT=$(git rev-list --count HEAD)
+            PATCH_VERSION=$((COMMIT_COUNT))
+            if [ $PATCH_VERSION -lt 0 ]; then
+              PATCH_VERSION=0
+            fi
+            VERSION="0.0.${PATCH_VERSION}"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Generated release version: ${VERSION}"
+          else
+            # For non-master branches, use snapshot version
+            VERSION="${{ env.APP_VERSION }}-SNAPSHOT"
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "Generated snapshot version: ${VERSION}"
+          fi
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Update version in pom.xml
+        run: |
+          mvn versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Run tests and verify
+        run: mvn clean test verify
+
+      - name: Build JAR
+        run: mvn clean install -DskipTests
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: numora-${{ steps.version.outputs.version }}
+          path: target/*.jar
+          retention-days: 30
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "temurin"
+          server-id: central
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Update version in pom.xml
+        run: |
+          mvn versions:set -DnewVersion=${{ needs.test.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Create and push version tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v${{ needs.test.outputs.version }}" -m "Release version ${{ needs.test.outputs.version }}"
+          git push origin "v${{ needs.test.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Maven Central
+        run: >
+          mvn --batch-mode deploy -DskipTests
+          -DaltDeploymentRepository=central::default::https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+          -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.test.outputs.version }}
+          name: Solastice Numora Jar v${{ needs.test.outputs.version }}
+          body: |
+            ## Solastice Numora Jar Release v${{ needs.test.outputs.version }}
+
+            ### Changes
+            - Automated release from master branch
+            - Commit: ${{ github.sha }}
+
+            ### Artifacts
+            - JAR available in Maven Central
+            - Maven coordinates: `com.solastice:numora:${{ needs.test.outputs.version }}`
+
+            ### Installation
+            ```xml
+            <dependency>
+                <groupId>com.solastice</groupId>
+                <artifactId>numora</artifactId>
+                <version>${{ needs.test.outputs.version }}</version>
+            </dependency>
+            ```
+
+            ### Usage
+            No extra repository configuration is required. Maven Central is used by default.
+            Browse artifact: https://central.sonatype.com/artifact/com.solastice/numora/${{ needs.test.outputs.version }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

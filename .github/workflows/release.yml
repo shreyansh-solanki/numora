@@ -1,0 +1,187 @@
+name: Release with Semantic Versioning
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: "Version increment type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      pre-release:
+        description: "Mark as pre-release"
+        required: false
+        default: false
+        type: boolean
+
+env:
+  APP_VERSION: 0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: "25"
+          distribution: "temurin"
+          server-id: central
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Get latest tag
+        id: get-latest-tag
+        run: |
+          # Get the latest tag, or use 0.0.0 if no tags exist
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest-tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          echo "Latest tag: ${LATEST_TAG}"
+
+      - name: Calculate new version
+        id: calc-version
+        run: |
+          LATEST_TAG="${{ steps.get-latest-tag.outputs.latest-tag }}"
+          # Remove 'v' prefix if present
+          CURRENT_VERSION=${LATEST_TAG#v}
+
+          # Split version into parts
+          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+          MAJOR=${VERSION_PARTS[0]:-0}
+          MINOR=${VERSION_PARTS[1]:-0}
+          PATCH=${VERSION_PARTS[2]:-0}
+
+          # Increment based on input
+          case "${{ github.event.inputs.version-type }}" in
+            "major")
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            "minor")
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            "patch")
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version: ${NEW_VERSION}"
+
+      - name: Update version in pom.xml
+        run: |
+          mvn versions:set -DnewVersion=${{ steps.calc-version.outputs.new-version }} -DgenerateBackupPoms=false
+
+      - name: Run tests
+        run: mvn clean test verify
+
+      - name: Build and package
+        run: mvn clean package -DskipTests
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pom.xml
+          git commit -m "chore: bump version to ${{ steps.calc-version.outputs.new-version }}"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.calc-version.outputs.new-version }}" -m "Release version ${{ steps.calc-version.outputs.new-version }}"
+          git push origin HEAD:master
+          git push origin "v${{ steps.calc-version.outputs.new-version }}"
+
+      - name: Publish to Maven Central
+        run: >
+          mvn --batch-mode deploy -DskipTests
+          -DaltDeploymentRepository=central::default::https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+          -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get commits since last tag
+          PREVIOUS_TAG="${{ steps.get-latest-tag.outputs.latest-tag }}"
+          if [ "$PREVIOUS_TAG" = "v0.0.0" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges --skip=1)
+          fi
+
+          # Save changelog to file for multi-line output
+          echo "$CHANGELOG" > changelog.txt
+          echo "Generated changelog with $(wc -l < changelog.txt) entries"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.calc-version.outputs.new-version }}
+          name: Solastice Numora Jar v${{ steps.calc-version.outputs.new-version }}
+          body: |
+            ## Solastice Numora Jar Release v${{ steps.calc-version.outputs.new-version }}
+
+            ### 📦 Installation
+
+            Add the dependency to your `pom.xml`:
+            ```xml
+            <dependency>
+                <groupId>com.solastice</groupId>
+                <artifactId>numora</artifactId>
+                <version>${{ steps.calc-version.outputs.new-version }}</version>
+            </dependency>
+            ```
+
+            ### 🔧 Repository Configuration
+
+            No extra repository configuration is required. Maven Central is used by default.
+            Artifact page: https://central.sonatype.com/artifact/com.solastice/numora/${{ steps.calc-version.outputs.new-version }}
+
+            ### 📋 Changes
+            $(cat changelog.txt)
+
+            ### 🏷️ Artifacts
+            - JAR available in Maven Central
+            - Source JAR included
+            - Maven coordinates: `com.solastice:numora:${{ steps.calc-version.outputs.new-version }}`
+          files: |
+            target/*.jar
+          draft: false
+          prerelease: ${{ github.event.inputs.pre-release == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: numora-${{ steps.calc-version.outputs.new-version }}
+          path: |
+            target/*.jar
+            target/*.pom
+          retention-days: 90

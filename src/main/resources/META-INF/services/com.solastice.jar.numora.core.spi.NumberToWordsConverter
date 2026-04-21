@@ -1,0 +1,9 @@
+com.solastice.jar.numora.converter.strategy.EnglishNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.IndianEnglishNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.HindiNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.GermanNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.FrenchNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.SpanishNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.ArabicNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.JapaneseNumberToWordsConverter
+com.solastice.jar.numora.converter.strategy.ChineseNumberToWordsConverter
