@@ -19,10 +19,11 @@
         <java.version>25</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
-        <maven.source.plugin.version>3.4.0</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
-        <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
+        <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+        <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
+        <maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
+        <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+        <maven.central.publishing.plugin.version>0.10.0</maven.central.publishing.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <junit.jupiter.version>6.0.3</junit.jupiter.version>
@@ -71,13 +72,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <repository>
-            <id>central</id>
-            <url>https://central.sonatype.com/api/v1/publisher/deployments/upload</url>
-        </repository>
-    </distributionManagement>
 
     <build>
         <plugins>
@@ -173,6 +167,17 @@
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
                             </gpgArguments>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${maven.central.publishing.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
                         </configuration>
                     </plugin>
                 </plugins>
