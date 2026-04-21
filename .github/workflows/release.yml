@@ -121,7 +121,7 @@ jobs:
       - name: Publish to Maven Central
         run: >
           mvn --batch-mode deploy -DskipTests
-          -DaltDeploymentRepository=central::default::https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+          -DaltDeploymentRepository=central::default::https://central.sonatype.com/api/v1/publisher/deployments/upload
           -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
       - name: Generate changelog
