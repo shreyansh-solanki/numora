@@ -74,4 +74,8 @@ public class GermanNumberToWordsConverter implements NumberToWordsConverter {
         String unit = (q == 1) ? "eine Milliarde" : convert(q) + " Milliarden";
         return unit + (r == 0 ? "" : " " + convert(r));
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "nur";
+    }
 }

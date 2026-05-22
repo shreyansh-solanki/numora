@@ -72,5 +72,8 @@ public class ChineseNumberToWordsConverter implements NumberToWordsConverter {
         String t = DIGITS[tens] + "十";
         return ones == 0 ? t : t + DIGITS[ones];
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "整";
+    }
 }
-

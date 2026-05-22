@@ -6,6 +6,7 @@ import com.solastice.jar.numora.core.exception.InvalidAmountException;
 import com.solastice.jar.numora.core.model.ConversionRequest;
 import com.solastice.jar.numora.core.model.ConversionResult;
 import com.solastice.jar.numora.core.model.CurrencyInfo;
+import com.solastice.jar.numora.core.model.OutputStyle;
 import com.solastice.jar.numora.core.spi.NumberToWordsConverter;
 
 import java.math.BigDecimal;
@@ -40,6 +41,17 @@ public class ConversionEngine {
                 .intValue();
 
         String words = compose(intPart, decPart, info, converter, request);
+
+        if (request.includeOnlyKeyword()) {
+            String onlyKeyword = converter.getOnlyKeyword();
+            if (onlyKeyword != null && !onlyKeyword.isEmpty()) {
+                if (request.outputStyle() == OutputStyle.CHEQUE) {
+                    words = words + " " + onlyKeyword.toUpperCase();
+                } else {
+                    words = words + " " + onlyKeyword;
+                }
+            }
+        }
 
         return new ConversionResult(
                 words,

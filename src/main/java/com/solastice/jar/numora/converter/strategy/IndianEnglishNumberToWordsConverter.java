@@ -81,4 +81,8 @@ public class IndianEnglishNumberToWordsConverter implements NumberToWordsConvert
         if (n < 20) return ONES[(int) n];
         return TENS[(int) (n / 10)] + (n % 10 != 0 ? "-" + ONES[(int) (n % 10)] : "");
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "only";
+    }
 }

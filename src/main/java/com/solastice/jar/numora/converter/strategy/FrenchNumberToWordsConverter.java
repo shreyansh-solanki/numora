@@ -104,4 +104,8 @@ public class FrenchNumberToWordsConverter implements NumberToWordsConverter {
         String unit = (q == 1) ? "un milliard" : convert(q) + " milliards";
         return unit + (r == 0 ? "" : " " + convert(r));
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "seulement";
+    }
 }

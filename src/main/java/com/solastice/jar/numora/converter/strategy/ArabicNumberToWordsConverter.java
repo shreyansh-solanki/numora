@@ -87,4 +87,8 @@ public class ArabicNumberToWordsConverter implements NumberToWordsConverter {
         String unit = (q == 1) ? "مليار" : convert(q) + " مليارات";
         return unit + (r == 0 ? "" : " و" + convert(r));
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "فقط";
+    }
 }
