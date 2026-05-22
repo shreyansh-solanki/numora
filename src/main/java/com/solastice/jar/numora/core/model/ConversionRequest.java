@@ -36,6 +36,7 @@ public final class ConversionRequest {
     private final boolean capitalizeFirstWord;
     private final boolean includeDecimalPart;
     private final boolean useAnd;             // "one hundred AND twenty" vs "one hundred twenty"
+    private final boolean includeOnlyKeyword;
     private final OutputStyle outputStyle;
 
     private ConversionRequest(Builder builder) {
@@ -45,6 +46,7 @@ public final class ConversionRequest {
         this.capitalizeFirstWord = builder.capitalizeFirstWord;
         this.includeDecimalPart  = builder.includeDecimalPart;
         this.useAnd              = builder.useAnd;
+        this.includeOnlyKeyword  = builder.includeOnlyKeyword;
         this.outputStyle         = builder.outputStyle != null ? builder.outputStyle : OutputStyle.FULL;
     }
 
@@ -56,6 +58,7 @@ public final class ConversionRequest {
     public boolean    capitalizeFirstWord() { return capitalizeFirstWord; }
     public boolean    includeDecimalPart()  { return includeDecimalPart; }
     public boolean    useAnd()              { return useAnd; }
+    public boolean    includeOnlyKeyword()  { return includeOnlyKeyword; }
     public OutputStyle outputStyle()        { return outputStyle; }
 
     public static Builder builder() {
@@ -71,6 +74,7 @@ public final class ConversionRequest {
         private boolean     capitalizeFirstWord = true;
         private boolean     includeDecimalPart  = true;
         private boolean     useAnd              = true;
+        private boolean     includeOnlyKeyword  = true;
         private OutputStyle outputStyle         = OutputStyle.FULL;
 
         private Builder() {}
@@ -107,6 +111,11 @@ public final class ConversionRequest {
 
         public Builder useAnd(boolean value) {
             this.useAnd = value;
+            return this;
+        }
+
+        public Builder includeOnlyKeyword(boolean value) {
+            this.includeOnlyKeyword = value;
             return this;
         }
 

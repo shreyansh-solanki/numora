@@ -75,4 +75,8 @@ public class EnglishNumberToWordsConverter implements NumberToWordsConverter {
         String joiner  = (useAnd && remainder < HUNDRED) ? " and " : " ";
         return head + joiner + tail;
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "only";
+    }
 }

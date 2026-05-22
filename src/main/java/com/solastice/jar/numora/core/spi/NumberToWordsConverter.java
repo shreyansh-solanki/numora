@@ -44,4 +44,11 @@ public interface NumberToWordsConverter {
     default int priority() {
         return 0;
     }
+
+    /**
+     * Returns the target language's equivalent for the "only" keyword.
+     *
+     * @return word representation of the "only" keyword
+     */
+    String getOnlyKeyword();
 }

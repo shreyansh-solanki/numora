@@ -68,6 +68,7 @@ public class DefaultCurrencyWordsService implements CurrencyWordsService {
                         .capitalizeFirstWord(request.capitalizeFirstWord())
                         .includeDecimalPart(request.includeDecimalPart())
                         .useAnd(request.useAnd())
+                        .includeOnlyKeyword(request.includeOnlyKeyword())
                         .outputStyle(request.outputStyle())
                         .build();
                 return conversionEngine.execute(enriched);

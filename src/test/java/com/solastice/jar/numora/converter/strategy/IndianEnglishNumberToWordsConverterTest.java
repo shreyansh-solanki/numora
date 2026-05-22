@@ -61,6 +61,7 @@ class IndianEnglishNumberToWordsConverterTest {
                 .currency(Currency.getInstance("INR"))
                 .locale(new Locale("en", "IN"))
                 .useAnd(true)
+                .includeOnlyKeyword(true)
                 .build();
         return converter.convertInteger(n, request);
     }

@@ -87,4 +87,8 @@ public class SpanishNumberToWordsConverter implements NumberToWordsConverter {
         String unit = (q == 1) ? "un millardo" : convert(q) + " millardos";
         return unit + (r == 0 ? "" : " " + convert(r));
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "solo";
+    }
 }

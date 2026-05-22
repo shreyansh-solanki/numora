@@ -75,4 +75,8 @@ public class HindiNumberToWordsConverter implements NumberToWordsConverter {
 
         return sb.toString().trim();
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "मात्र";
+    }
 }

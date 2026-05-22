@@ -42,6 +42,7 @@ class ConversionRequestTest {
                 .capitalizeFirstWord(false)
                 .includeDecimalPart(false)
                 .useAnd(false)
+                .includeOnlyKeyword(false)
                 .build();
         
         assertEquals(amount, request.amount());

@@ -63,4 +63,8 @@ public class JapaneseNumberToWordsConverter implements NumberToWordsConverter {
         long r = n % 100_000_000L;
         return convert(q) + "億" + (r == 0 ? "" : convert(r));
     }
+    @Override
+    public String getOnlyKeyword() {
+        return "のみ";
+    }
 }
